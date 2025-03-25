@@ -39,6 +39,6 @@ class Comment : BaseTime {
         actor.isAdmin -> true
         actor == this.author -> true
         else ->
-        throw ServiceException("403-1", "자신이 작성한 댓글만 삭제 가능합니다.")
+            throw ServiceException("403-1", "자신이 작성한 댓글만 삭제 가능합니다.")
     }
 }

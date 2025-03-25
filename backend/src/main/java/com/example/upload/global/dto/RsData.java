@@ -14,11 +14,11 @@ public class RsData<T> {
     public static final RsData<Empty> OK = new RsData<>("200-1", "OK", new Empty());
 
     @NonNull
-    private String code;
+    public String code; // TODO: private 으로 변경
     @NonNull
-    private String msg;
+    public String msg;
     @NonNull
-    private T data;
+    public T data;
 
     public RsData(String code, String msg) {
         this(code, msg, (T) new Empty());
