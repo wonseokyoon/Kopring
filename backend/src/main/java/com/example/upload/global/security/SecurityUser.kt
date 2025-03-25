@@ -21,10 +21,6 @@ class SecurityUser(
         member.authorities
     )
 
-    override fun <A> getAttribute(name: String): A? {
-        return super<OAuth2User>.getAttribute(name)
-    }
-
     override fun getAttributes(): Map<String, Any> {
         return emptyMap()
     }
