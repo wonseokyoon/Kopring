@@ -10,11 +10,11 @@ import com.example.upload.global.exception.ServiceException
 import com.example.upload.standard.util.Ut
 import jakarta.persistence.*
 import java.util.*
-import java.util.stream.Collectors
 
 @Entity
 class Post() :
     BaseTime() {
+
     @ManyToOne(fetch = FetchType.LAZY)
     lateinit var author: Member
     lateinit var title: String
@@ -28,14 +28,17 @@ class Post() :
     @OneToMany(mappedBy = "post", cascade = [CascadeType.PERSIST, CascadeType.REMOVE], orphanRemoval = true)
     val genFiles: MutableList<PostGenFile> = mutableListOf()
 
-    constructor(author: Member, title: String, content: String, published: Boolean, listed: Boolean) :this() {
+    constructor(author: Member,
+                title: String,
+                content: String,
+                published: Boolean,
+                listed: Boolean) : this() {
         this.author = author
         this.title = title
         this.content = content
         this.published = published
         this.listed = listed
     }
-
 
     fun addGenFile(typeCode: PostGenFile.TypeCode, filePath: String): PostGenFile {
         return addGenFile(typeCode, 0, filePath)
@@ -53,9 +56,9 @@ class Post() :
         val metadataStr = metadata
             .entries
             .map { entry: Map.Entry<String, Any> -> entry.key + "-" + entry.value }
-            .joinToString(","){ it }
+            .joinToString(";") { it }
 
-        val fileName = "${UUID.randomUUID().toString()}.${fileExt}"
+        val fileName = "${UUID.randomUUID()}.$fileExt"
         val fileSize = Ut.file.getFileSize(filePath)
         fileNo = if (fileNo == 0) getNextGenFileNo(typeCode) else fileNo
 
@@ -82,7 +85,7 @@ class Post() :
 
     private fun getNextGenFileNo(typeCode: PostGenFile.TypeCode): Int {
         return genFiles
-            .filter { genFile: PostGenFile -> genFile.typeCode == typeCode }
+            .filter { it.typeCode == typeCode }
             .maxOfOrNull { it.fileNo }
             ?.plus(1) ?: 1
     }
@@ -94,7 +97,7 @@ class Post() :
     }
 
     fun deleteGenFile(typeCode: PostGenFile.TypeCode, fileNo: Int) {
-        getGenFileByTypeCodeAndFileNo(typeCode, fileNo)?.let{
+        getGenFileByTypeCodeAndFileNo(typeCode, fileNo)?.let {
             genFiles.remove(it)
             Ut.file.rm(it.filePath)
         }
@@ -104,8 +107,8 @@ class Post() :
         getGenFileByTypeCodeAndFileNo(
             typeCode,
             fileNo
-        )?.let {
-            genFile: PostGenFile ->
+        )
+            ?.let { genFile: PostGenFile ->
                 Ut.file.rm(genFile.filePath)
                 val originalFileName = Ut.file.getOriginalFileName(filePath)
                 val fileExt = Ut.file.getFileExt(filePath)
@@ -116,11 +119,10 @@ class Post() :
 
                 val metadataStr = metadata
                     .entries
-                    .stream()
                     .map { entry: Map.Entry<String, Any> -> entry.key + "-" + entry.value }
-                    .collect(Collectors.joining(";"))
+                    .joinToString(";") { it }
 
-                val fileName = "${UUID.randomUUID().toString()}.${fileExt}"
+                val fileName = "${UUID.randomUUID()}.$fileExt"
                 val fileSize = Ut.file.getFileSize(filePath)
 
                 genFile.originalFileName = originalFileName
@@ -136,23 +138,21 @@ class Post() :
     }
 
     fun putGenFile(typeCode: PostGenFile.TypeCode, fileNo: Int, filePath: String) {
-        val opPostGenFile = getGenFileByTypeCodeAndFileNo(
+        getGenFileByTypeCodeAndFileNo(
             typeCode,
             fileNo
-        )
-
-        opPostGenFile?.let {
+        )?.let {
             modifyGenFile(typeCode, fileNo, filePath)
-        } ?:
-            addGenFile(typeCode, fileNo, filePath)
+        } ?: addGenFile(typeCode, fileNo, filePath)
     }
 
     fun addComment(author: Member, content: String): Comment {
-        val comment = Comment(
-            this,
-            author,
-            content
-        )
+
+        val comment = Comment().apply {
+            this.post = this@Post
+            this.author = author
+            this.content = content
+        }
 
         comments.add(comment)
 
@@ -160,7 +160,7 @@ class Post() :
     }
 
     fun getCommentById(id: Long): Comment {
-        comments.firstOrNull { it.id == id }?.let {
+        return comments.firstOrNull { it.id == id }?.let {
             return it
         } ?: throw ServiceException("404-2", "존재하지 않는 댓글입니다.")
 
@@ -171,26 +171,14 @@ class Post() :
     }
 
     fun canModify(actor: Member) {
-        if (actor == null) {
-            throw ServiceException("401-1", "인증 정보가 없습니다.")
-        }
-
         if (actor.isAdmin) return
-
         if (actor == this.author) return
-
         throw ServiceException("403-1", "자신이 작성한 글만 수정 가능합니다.")
     }
 
     fun canDelete(actor: Member) {
-        if (actor == null) {
-            throw ServiceException("401-1", "인증 정보가 없습니다.")
-        }
-
         if (actor.isAdmin) return
-
         if (actor == this.author) return
-
         throw ServiceException("403-1", "자신이 작성한 글만 삭제 가능합니다.")
     }
 
@@ -202,10 +190,7 @@ class Post() :
     }
 
     val latestComment: Comment
-        get() =
-            comments.maxByOrNull { it.id } ?: throw ServiceException("404-2", "존재하지 않는 댓글입니다.")
-
-
+        get() = comments.maxByOrNull { it.id!! } ?: throw ServiceException("404-2", "존재하지 않는 댓글입니다.")
 
     fun getHandleAuthority(actor: Member?): Boolean {
         if (actor == null) return false
@@ -215,18 +200,17 @@ class Post() :
     }
 
     fun checkActorCanMakeNewGenFile(actor: Member?) {
+
         getCheckActorCanMakeNewGenFileRs(actor)
             .takeIf { it.isFail }
             ?.let {
-                throw ServiceException(it.code,it.msg)
+                throw ServiceException(it.code, it.msg)
             }
     }
 
     fun getCheckActorCanMakeNewGenFileRs(actor: Member?): RsData<Empty> {
         if (actor == null) return RsData("401-1", "로그인 후 이용해주세요.")
-
         if (actor == author) return RsData.OK
-
         return RsData("403-1", "작성자만 파일을 업로드할 수 있습니다.")
     }
 
