@@ -1,7 +1,6 @@
 package com.example.upload.domain.member.member.controller
 
 import com.example.upload.domain.member.member.dto.MemberDto
-import com.example.upload.domain.member.member.entity.Member
 import com.example.upload.domain.member.member.service.MemberService
 import com.example.upload.domain.post.post.service.PostService
 import com.example.upload.global.Rq
@@ -15,7 +14,6 @@ import jakarta.servlet.http.HttpServletResponse
 import jakarta.servlet.http.HttpSession
 import jakarta.validation.Valid
 import jakarta.validation.constraints.NotBlank
-import lombok.RequiredArgsConstructor
 import org.springframework.lang.NonNull
 import org.springframework.web.bind.annotation.*
 
@@ -27,9 +25,9 @@ class ApiV1MemberController(
     private val memberService: MemberService,
     private val rq: Rq,
     private val postService: PostService
-
 ) {
 
+    @JvmRecord
     data class JoinReqBody(
         @field:NotBlank val username: String,
         @field:NotBlank val password: String,
@@ -53,11 +51,9 @@ class ApiV1MemberController(
         )
     }
 
+
     @JvmRecord
-    data class LoginReqBody(
-        @field:NotBlank val username: String,
-        @field:NotBlank val password: String
-    )
+    data class LoginReqBody(@field:NotBlank val username: String, @field:NotBlank val password: String)
 
     @JvmRecord
     data class LoginResBody(
@@ -68,7 +64,7 @@ class ApiV1MemberController(
 
     @Operation(summary = "로그인", description = "로그인 성공 시 ApiKey와 AccessToken 반환. 쿠키로도 반환")
     @PostMapping("/login")
-    fun login(@RequestBody @Valid reqBody: LoginReqBody, response: HttpServletResponse?): RsData<LoginResBody> {
+    fun login(@RequestBody  @Valid reqBody: LoginReqBody, response: HttpServletResponse?): RsData<LoginResBody> {
         val member = memberService.findByUsername(reqBody.username).orElseThrow {
             ServiceException(
                 "401-1",
@@ -82,7 +78,7 @@ class ApiV1MemberController(
 
         val accessToken = memberService.genAccessToken(member)
 
-        rq.addCookie("accessToken", accessToken)
+        rq!!.addCookie("accessToken", accessToken)
         rq.addCookie("apiKey", member.apiKey)
 
         return RsData(
