@@ -16,7 +16,7 @@ abstract class BaseEntity {
     var id: Long? = null // TODO: 추후에 코틀린 전환 과정에서 해결
 
     val modelName: String
-        get() = Ut.str.lcfirst(this::class.simpleName)
+        get() = Ut.str.lcfirst(this::class.simpleName!!)
 
     override fun equals(other: Any?): Boolean {
 

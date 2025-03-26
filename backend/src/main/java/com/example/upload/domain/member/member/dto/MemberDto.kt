@@ -1,9 +1,7 @@
 package com.example.upload.domain.member.member.dto
 
 import com.example.upload.domain.member.member.entity.Member
-import com.example.upload.domain.post.post.entity.Post
-import lombok.Getter
-import org.springframework.lang.NonNull
+
 
 class MemberDto(
     val id:Long,

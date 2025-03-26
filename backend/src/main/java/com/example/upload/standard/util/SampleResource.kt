@@ -26,7 +26,6 @@ enum class SampleResource(
     val fileExtType2Code: String
     val fileExt: String // 확장자 (mp3, jpg 등)
 
-
     init {
         val fileExt = Ut.file.getFileExt(fileName)
         val fileExtTypeCode = Ut.file.getFileExtTypeCodeFromFileExt(fileExt)
