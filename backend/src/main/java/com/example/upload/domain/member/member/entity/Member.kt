@@ -30,7 +30,6 @@ class Member() : BaseTime() {
     }
 
     constructor(username: String, password:String, apiKey: String, nickname: String, profileImgUrl: String): this() {
-        this.id = id
         this.username = username
         this.password = password
         this.apiKey = apiKey
@@ -39,16 +38,16 @@ class Member() : BaseTime() {
     }
 
     val isAdmin: Boolean
-    get() = username == "admin"
+        get() = username == "admin"
 
     val authoritiesAsString:List<String>
-    get() = if (isAdmin) listOf("ROLE_ADMIN") else emptyList()
+        get() = if (isAdmin) listOf("ROLE_ADMIN") else emptyList()
 
     val authorities: List<GrantedAuthority>
-    get() = authoritiesAsString.map { SimpleGrantedAuthority(it) }
+        get() = authoritiesAsString.map { SimpleGrantedAuthority(it) }
 
     val profileImgUrlOrDefault: String
-    get() = profileImgUrl.ifBlank{ "https://placehold.co/640x640?text=O_O" }
+        get() = profileImgUrl.ifBlank{ "https://placehold.co/640x640?text=O_O" }
 
     fun update(nickname: String) {
         this.nickname = nickname
