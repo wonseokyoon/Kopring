@@ -1,6 +1,5 @@
 package com.example.upload.domain.post.genFile.controller
 
-import com.example.upload.domain.post.genFile.entity.PostGenFile
 import com.example.upload.domain.post.post.service.PostService
 import com.example.upload.standard.util.Ut.url.encode
 import io.swagger.v3.oas.annotations.Operation
@@ -31,9 +30,6 @@ class PostGenFileController(
     @GetMapping("/download/{postId}/{fileName}")
     @Operation(summary = "파일 다운로드")
     @Transactional
-    @Throws(
-        FileNotFoundException::class
-    )
     fun download(
         @PathVariable postId: Long,
         @PathVariable fileName: String,
@@ -41,16 +37,10 @@ class PostGenFileController(
     ): ResponseEntity<Resource> {
         val post = postService.getItem(postId).get()
 
-        val genFile = post.genFiles
-            .stream()
-            .filter { f: PostGenFile -> f.fileName == fileName }
-            .findFirst()
-            .get()
+        val genFile = post.genFiles.firstOrNull { it.fileName == fileName } ?: throw FileNotFoundException()
 
         val filePath = genFile.filePath
-
         val resource: Resource = InputStreamResource(FileInputStream(filePath))
-
         var contentType = request.servletContext.getMimeType(filePath)
 
         if (contentType == null) contentType = "application/octet-stream"
