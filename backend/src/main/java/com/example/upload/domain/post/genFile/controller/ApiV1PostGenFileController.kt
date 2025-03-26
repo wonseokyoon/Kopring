@@ -72,7 +72,7 @@ class ApiV1PostGenFileController(
         return RsData(
             "201-1",
             "${postGenFiles.size}개의 파일이 생성되었습니다.",
-            postGenFiles.stream().map { postGenFile: PostGenFile? -> PostGenFileDto(postGenFile!!) }.toList()
+            postGenFiles.map { postGenFile: PostGenFile? -> PostGenFileDto(postGenFile!!) }
         )
     }
 
@@ -91,8 +91,7 @@ class ApiV1PostGenFileController(
 
         return post
             .genFiles
-            .stream()
             .map { postGenFile: PostGenFile? -> PostGenFileDto(postGenFile!!) }
-            .toList()
+
     }
 }

@@ -11,6 +11,8 @@ import com.example.upload.global.exception.ServiceException
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
+import jakarta.validation.Valid
+import jakarta.validation.constraints.NotBlank
 import lombok.RequiredArgsConstructor
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.bind.annotation.*
@@ -37,9 +39,7 @@ class ApiV1CommentController(
         }
 
         return post.comments
-            .stream()
             .map { comment: Comment? -> CommentDto(comment!!) }
-            .toList()
     }
 
     @Operation(summary = "댓글 상세", description = "게시글의 댓글 상세 정보를 가져옵니다.")
@@ -79,7 +79,7 @@ class ApiV1CommentController(
 
 
     @JvmRecord
-    data class CommentModifyReqBody(val content: String)
+    data class CommentModifyReqBody(@field:NotBlank val content: String)
 
     @Operation(summary = "댓글 수정", description = "게시글의 댓글을 수정합니다.")
     @PutMapping("{id}")
@@ -87,7 +87,7 @@ class ApiV1CommentController(
     fun modify(
         @PathVariable postId: Long,
         @PathVariable id: Long,
-        @RequestBody reqBody: CommentModifyReqBody
+        @RequestBody @Valid reqBody: CommentModifyReqBody
     ): RsData<Empty> {
         val actor = rq.actor
 
