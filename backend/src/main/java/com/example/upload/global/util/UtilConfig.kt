@@ -8,6 +8,6 @@ import org.springframework.context.annotation.Configuration;
 class UtilConfig {
     @Bean
     fun tika(): Tika {
-        return Tika();
+        return Tika()
     }
 }
