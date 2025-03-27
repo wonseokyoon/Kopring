@@ -15,9 +15,9 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 import jakarta.validation.constraints.NotBlank
 import org.springdoc.core.annotations.ParameterObject
+import org.springframework.lang.NonNull
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.bind.annotation.*
-import java.util.*
 
 @SecurityRequirement(name = "bearerAuth")
 @Tag(name = "ApiV1PostController", description = "글 API")
@@ -28,10 +28,11 @@ class ApiV1PostController(
     private val rq: Rq
 ) {
 
+    @JvmRecord
     data class StatisticsResBody(
-        val postCount: Long,
-        val postPublishedCount: Long,
-        val postListedCount: Long
+        @field:NonNull @param:NonNull val postCount: Long,
+        @field:NonNull @param:NonNull val postPublishedCount: Long,
+        @field:NonNull @param:NonNull val postListedCount: Long
     )
 
     @get:GetMapping("/statistics")
@@ -60,6 +61,7 @@ class ApiV1PostController(
         )
     }
 
+
     @Operation(summary = "내 글 목록 조회", description = "페이징 처리와 검색 가능")
     @GetMapping("/mine")
     @Transactional(readOnly = true)
@@ -78,10 +80,11 @@ class ApiV1PostController(
     @GetMapping("{id}")
     @Transactional(readOnly = true)
     fun getItem(@PathVariable id: Long): RsData<PostWithContentDto> {
-        val post = postService.getItem(id).orElse(null)
-
-        if (post == null) {
-            throw ServiceException("404-1", "존재하지 않는 글입니다.")
+        val post = postService.getItem(id).orElseThrow {
+            ServiceException(
+                "404-1",
+                "존재하지 않는 글입니다."
+            )
         }
 
         if (!post.published) {
@@ -89,10 +92,9 @@ class ApiV1PostController(
             post.canRead(actor)
         }
 
-        val postWithContentDto = PostWithContentDto(post).apply {
-            if (rq.isLogin) {
-                this.canActorHandle = post.getHandleAuthority(rq.actor)
-            }
+        val postWithContentDto = PostWithContentDto(post)
+        if (rq.isLogin) {
+            postWithContentDto.canActorHandle = post.getHandleAuthority(rq.actor)
         }
 
         return RsData(
@@ -102,6 +104,7 @@ class ApiV1PostController(
         )
     }
 
+    @JvmRecord
     data class WriteReqBody(
         @field:NotBlank val title: String,
         @field:NotBlank val content: String,
@@ -125,6 +128,7 @@ class ApiV1PostController(
         )
     }
 
+    @JvmRecord
     data class PostModifyReqBody(
         @field:NotBlank val title: String,
         @field:NotBlank val content: String,
@@ -136,12 +140,17 @@ class ApiV1PostController(
     @PutMapping("/{id}")
     @Transactional
     fun modify(@PathVariable id: Long, @RequestBody @Valid reqBody: PostModifyReqBody): RsData<PostWithContentDto> {
-        val actor = rq.actor
+        val actor = rq.actor // 야매
 
-        val post = postService.getItem(id).orElse(null)
-            ?: throw ServiceException("404-1", "존재하지 않는 글입니다.")
+        val post = postService.getItem(id).orElseThrow {
+            ServiceException(
+                "404-1",
+                "존재하지 않는 글입니다."
+            )
+        }
 
         post.canModify(actor)
+
         postService.modify(post, reqBody.title, reqBody.content, reqBody.published, reqBody.listed)
 
         return RsData(
@@ -157,8 +166,12 @@ class ApiV1PostController(
     fun delete(@PathVariable id: Long): RsData<Empty> {
         val actor = rq.actor
 
-        val post = postService.getItem(id).orElse(null)
-            ?: throw ServiceException("404-1", "존재하지 않는 글입니다.")
+        val post = postService.getItem(id).orElseThrow {
+            ServiceException(
+                "404-1",
+                "존재하지 않는 글입니다."
+            )
+        }
 
         post.canDelete(actor)
         postService.delete(post)
@@ -169,8 +182,9 @@ class ApiV1PostController(
         )
     }
 
+    @JvmRecord
     data class PostMakeTempResponseBody(
-        val post: PostDto
+        @field:NonNull @param:NonNull val post: PostDto
     )
 
     @Transactional
@@ -181,7 +195,7 @@ class ApiV1PostController(
 
         return findTempOrMakeRsData.newDataOf(
             PostMakeTempResponseBody(
-                PostDto(findTempOrMakeRsData.data!!)
+                PostDto(findTempOrMakeRsData.data)
             )
         )
     }
