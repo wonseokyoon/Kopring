@@ -1,10 +1,7 @@
 package com.example.upload.standard.util
 
-import com.example.upload.global.app.AppConfig.Companion.getTempDirPath
-import com.example.upload.standard.util.Ut.file.delete
-import com.example.upload.standard.util.Ut.file.downloadByHttp
-import com.example.upload.standard.util.Ut.file.getExtensionByTika
-import org.assertj.core.api.Assertions
+import com.example.upload.global.app.AppConfig
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.springframework.boot.test.context.SpringBootTest
@@ -13,25 +10,39 @@ import org.springframework.test.context.ActiveProfiles
 @SpringBootTest
 @ActiveProfiles("test")
 class FileUtTest {
+
     @Test
     @DisplayName("downloadByHttp")
     fun t1() {
-        val newFilePath = downloadByHttp("https://picsum.photos/id/237/200/300", getTempDirPath())
+        // given
+        val imageUrl = "https://picsum.photos/id/237/200/300"
+        val tempDir = AppConfig.getTempDirPath()
 
-        // newFilePath 의 확장자가 jpg 인지 확인
-        Assertions.assertThat(newFilePath).endsWith(".jpg")
+        // when
+        val newFilePath = Ut.file.downloadByHttp(imageUrl, tempDir)
 
-        delete(newFilePath)
+        // then
+        assertThat(newFilePath).endsWith(".jpg")
+
+        // cleanup
+        Ut.file.delete(newFilePath)
     }
 
     @Test
     @DisplayName("getExtensionByTika")
     fun tika() {
-        val newFilePath = downloadByHttp("https://picsum.photos/id/237/200/300", getTempDirPath())
+        // given
+        val imageUrl = "https://picsum.photos/id/237/200/300"
+        val tempDir = AppConfig.getTempDirPath()
+        val newFilePath = Ut.file.downloadByHttp(imageUrl, tempDir)
 
-        val ext = getExtensionByTika(newFilePath)
-        Assertions.assertThat(ext).isEqualTo("jpg")
+        // when
+        val ext = Ut.file.getExtensionByTika(newFilePath)
 
-        delete(newFilePath)
+        // then
+        assertThat(ext).isEqualTo("jpg")
+
+        // cleanup
+        Ut.file.delete(newFilePath)
     }
 }
