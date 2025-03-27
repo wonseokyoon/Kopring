@@ -31,11 +31,11 @@ class PostService(
         }
     }
 
-    fun getItems(): List<Post?> {
+    fun getItems(): List<Post> {
         return postRepository.findAll()
     }
 
-    fun getItem(id: Long): Optional<Post?> {
+    fun getItem(id: Long): Optional<Post> {
         return postRepository.findById(id)
     }
 
