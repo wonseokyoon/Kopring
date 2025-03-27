@@ -13,9 +13,9 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.web.servlet.MockMvc
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders
-import org.springframework.test.web.servlet.result.MockMvcResultHandlers
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*
+import org.springframework.test.web.servlet.result.MockMvcResultHandlers.print
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.*
 import org.springframework.transaction.annotation.Transactional
 import java.nio.charset.StandardCharsets
 
@@ -23,143 +23,126 @@ import java.nio.charset.StandardCharsets
 @ActiveProfiles("test")
 @AutoConfigureMockMvc
 @Transactional
-class ApiV1CommentControllerTest {
-    @Autowired
-    private val mvc: MockMvc? = null
-
-    @Autowired
-    private val postService: PostService? = null
-
-    @Autowired
-    private val memberService: MemberService? = null
-
-    private var loginedMember: Member? = null
-    private var token: String? = null
+class ApiV1CommentControllerTest @Autowired constructor(
+    private val mvc: MockMvc,
+    private val postService: PostService,
+    private val memberService: MemberService
+) {
+    private lateinit var loginedMember: Member
+    private lateinit var token: String
 
     @BeforeEach
     fun login() {
-        loginedMember = memberService!!.findByUsername("user1").get()
-        token = memberService.getAuthToken(loginedMember!!)
+        loginedMember = memberService.findByUsername("user1").get()
+        token = memberService.getAuthToken(loginedMember)
     }
 
     @Test
     @DisplayName("댓글 작성")
-    @Throws(Exception::class)
     fun write() {
-        val postId: Long = 1
+        // given
+        val postId = 1L
         val content = "댓글 내용"
 
+        // when
         val resultActions = mvc
             .perform(
-                MockMvcRequestBuilders.post("/api/v1/posts/%d/comments".formatted(postId))
+                post("/api/v1/posts/$postId/comments")
                     .header("Authorization", "Bearer $token")
-                    .content(
-                        """
-                                        {
-                                            "content": "%s"
-                                        }
-                                        
-                                        """
-                            .trimIndent()
-                            .formatted(content)
-                            .stripIndent()
-                    )
-                    .contentType(
-                        MediaType(MediaType.APPLICATION_JSON, StandardCharsets.UTF_8)
-                    )
+                    .content("""
+                         {
+                             "content": "$content"
+                         }
+                     """.trimIndent())
+                    .contentType(MediaType(MediaType.APPLICATION_JSON, StandardCharsets.UTF_8))
             )
-            .andDo(MockMvcResultHandlers.print())
+            .andDo(print())
 
-        val post = postService!!.getItem(postId).get()
+        // then
+        val post = postService.getItem(postId).get()
         val comment = post.latestComment
 
         resultActions
-            .andExpect(MockMvcResultMatchers.status().isCreated())
-            .andExpect(MockMvcResultMatchers.handler().handlerType(ApiV1CommentController::class.java))
-            .andExpect(MockMvcResultMatchers.handler().methodName("write"))
-            .andExpect(MockMvcResultMatchers.jsonPath("$.code").value("201-1"))
-            .andExpect(MockMvcResultMatchers.jsonPath("$.msg").value("%d번 댓글 작성이 완료되었습니다.".formatted(comment.id)))
+            .andExpect(status().isCreated())
+            .andExpect(handler().handlerType(ApiV1CommentController::class.java))
+            .andExpect(handler().methodName("write"))
+            .andExpect(jsonPath("$.code").value("201-1"))
+            .andExpect(jsonPath("$.msg").value("${comment.id}번 댓글 작성이 완료되었습니다."))
     }
 
     @Test
     @DisplayName("댓글 수정")
-    @Throws(Exception::class)
     fun modify() {
-        val postId: Long = 1
-        val commentId: Long = 1
+        // given
+        val postId = 1L
+        val commentId = 1L
         val content = "댓글 내용"
 
+        // when
         val resultActions = mvc
             .perform(
-                MockMvcRequestBuilders.put("/api/v1/posts/%d/comments/%d".formatted(postId, commentId))
+                put("/api/v1/posts/$postId/comments/$commentId")
                     .header("Authorization", "Bearer $token")
-                    .content(
-                        """
-                                        {
-                                            "content": "%s"
-                                        }
-                                        
-                                        """
-                            .trimIndent()
-                            .formatted(content)
-                            .stripIndent()
-                    )
-                    .contentType(
-                        MediaType(MediaType.APPLICATION_JSON, StandardCharsets.UTF_8)
-                    )
+                    .content("""
+                         {
+                             "content": "$content"
+                         }
+                     """.trimIndent())
+                    .contentType(MediaType(MediaType.APPLICATION_JSON, StandardCharsets.UTF_8))
             )
-            .andDo(MockMvcResultHandlers.print())
+            .andDo(print())
 
+        // then
         resultActions
-            .andExpect(MockMvcResultMatchers.status().isOk())
-            .andExpect(MockMvcResultMatchers.handler().handlerType(ApiV1CommentController::class.java))
-            .andExpect(MockMvcResultMatchers.handler().methodName("modify"))
-            .andExpect(MockMvcResultMatchers.jsonPath("$.code").value("200-1"))
-            .andExpect(MockMvcResultMatchers.jsonPath("$.msg").value("%d번 댓글 수정이 완료되었습니다.".formatted(commentId)))
+            .andExpect(status().isOk())
+            .andExpect(handler().handlerType(ApiV1CommentController::class.java))
+            .andExpect(handler().methodName("modify"))
+            .andExpect(jsonPath("$.code").value("200-1"))
+            .andExpect(jsonPath("$.msg").value("${commentId}번 댓글 수정이 완료되었습니다."))
     }
 
     @Test
     @DisplayName("댓글 삭제")
-    @Throws(Exception::class)
     fun delete1() {
-        val postId: Long = 1
-        val commentId: Long = 1
+        // given
+        val postId = 1L
+        val commentId = 1L
 
+        // when
         val resultActions = mvc
             .perform(
-                MockMvcRequestBuilders.delete("/api/v1/posts/%d/comments/%d".formatted(postId, commentId))
+                delete("/api/v1/posts/$postId/comments/$commentId")
                     .header("Authorization", "Bearer $token")
             )
-            .andDo(MockMvcResultHandlers.print())
+            .andDo(print())
 
+        // then
         resultActions
-            .andExpect(MockMvcResultMatchers.status().isOk())
-            .andExpect(MockMvcResultMatchers.handler().handlerType(ApiV1CommentController::class.java))
-            .andExpect(MockMvcResultMatchers.handler().methodName("delete"))
-            .andExpect(MockMvcResultMatchers.jsonPath("$.code").value("200-1"))
-            .andExpect(MockMvcResultMatchers.jsonPath("$.msg").value("%d번 댓글 삭제가 완료되었습니다.".formatted(commentId)))
+            .andExpect(status().isOk())
+            .andExpect(handler().handlerType(ApiV1CommentController::class.java))
+            .andExpect(handler().methodName("delete"))
+            .andExpect(jsonPath("$.code").value("200-1"))
+            .andExpect(jsonPath("$.msg").value("${commentId}번 댓글 삭제가 완료되었습니다."))
     }
 
     @Test
     @DisplayName("댓글 다건 조회")
-    @Throws(Exception::class)
     fun items() {
-        val postId: Long = 1
+        // given
+        val postId = 1L
 
+        // when
         val resultActions = mvc
-            .perform(
-                MockMvcRequestBuilders.get(
-                    "/api/v1/posts/%d/comments".formatted(postId)
-                )
-            )
-            .andDo(MockMvcResultHandlers.print())
+            .perform(get("/api/v1/posts/$postId/comments"))
+            .andDo(print())
 
+        // then
         resultActions
-            .andExpect(MockMvcResultMatchers.status().isOk())
-            .andExpect(MockMvcResultMatchers.handler().handlerType(ApiV1CommentController::class.java))
-            .andExpect(MockMvcResultMatchers.handler().methodName("getItems"))
-            .andExpect(MockMvcResultMatchers.jsonPath("$.length()").value(2))
-            .andExpect(MockMvcResultMatchers.jsonPath("$[0].id").value(1))
-            .andExpect(MockMvcResultMatchers.jsonPath("$[1].id").value(2))
+            .andExpect(status().isOk())
+            .andExpect(handler().handlerType(ApiV1CommentController::class.java))
+            .andExpect(handler().methodName("getItems"))
+            .andExpect(jsonPath("$.length()").value(2))
+            .andExpect(jsonPath("$[0].id").value(1))
+            .andExpect(jsonPath("$[1].id").value(2))
     }
 }
